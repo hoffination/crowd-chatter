@@ -1,0 +1,57 @@
+service: messaging
+
+provider:
+  name: aws
+  runtime: nodejs4.3
+  stage: dev
+  region: us-west-2
+
+functions:
+  getMessages:
+    handler: handler.getMessages
+    events:
+      - http:
+          path: message
+          method: GET
+          cors: true
+  createMessage:
+    handler: handler.createMessage
+    events:
+      - http:
+          path: message
+          method: PUT
+          cors: true
+
+resources:
+  Resources:
+    DynamoDbTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: Chats
+        AttributeDefinitions:
+          - AttributeName: presentation
+            AttributeType: S
+          - AttributeName: timestamp
+            AttributeType: N
+        KeySchema:
+          - AttributeName: presentation
+            KeyType: HASH
+          - AttributeName: timestamp
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+    DynamoDBIamPolicy:
+      Type: AWS::IAM::Policy
+      Properties:
+        PolicyName: lambda-dynamodb
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:Query
+                - dynamodb:PutItem
+              Resource: arn:aws:dynamodb:us-west-2:*:table/Chats
+        Roles:
+          - Ref: IamRoleLambdaExecution
